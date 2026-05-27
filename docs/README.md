@@ -101,7 +101,7 @@ by adjusting the toml-configuration file, e.g.
 <!-- MARKDOWN-AUTO-DOCS:START (CODE:src=../docs/scripts/setup.sh&lines=53-53) -->
 <!-- The below code snippet is automatically added from ../docs/scripts/setup.sh -->
 ```sh
-ISDUBA_DB_MIGRATE=true ./cmd/isdubad/isdubad -c ./isduba.toml
+cd ../..
 ```
 <!-- MARKDOWN-AUTO-DOCS:END -->
 
