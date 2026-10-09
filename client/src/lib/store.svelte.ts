@@ -8,17 +8,10 @@
 
 import type { DocModel } from "$lib/Advisories/CSAFWebview/docmodel/docmodeltypes";
 import { ADMIN, AUDITOR, EDITOR, IMPORTER, REVIEWER, SOURCE_MANAGER } from "./workflow";
-import { MESSAGE } from "./Messages/messagetypes";
 import { UserManager, type UserProfile } from "oidc-client-ts";
 import { SvelteSet } from "svelte/reactivity";
 import type { SearchParameters } from "./Search/search.svelte";
 import { SEARCHTYPES } from "./Queries/query";
-
-type ErrorMessage = {
-  id: string;
-  type: string;
-  message: string;
-};
 
 export type ProfileWithRoles = UserProfile & {
   realm_access: {
@@ -40,7 +33,6 @@ type AppStore = {
     tokenParsed: ProfileWithRoles | null;
     userManager: UserManager | null;
     redirect: string | null;
-    errors: ErrorMessage[];
     documentsToDelete: any[] | null;
     selectedDocumentIDs: SvelteSet<number>;
     isToolboxOpen: boolean;
@@ -72,6 +64,7 @@ type AppStore = {
   };
   webview: {
     doc: DocModel | null;
+    rawDoc: any;
     providerMetadata: any;
     currentFeed: any;
     four_cves: any;
@@ -89,14 +82,6 @@ type AppStore = {
       uploadedFile: boolean;
       history: string[];
     };
-  };
-};
-
-const generateMessage = (msg: string, type: string) => {
-  return {
-    id: crypto.randomUUID(),
-    type: type,
-    message: msg
   };
 };
 
@@ -121,7 +106,6 @@ const generateInitialState = (): AppStore => {
       tokenParsed: null,
       userManager: null,
       redirect: null,
-      errors: [],
       documentsToDelete: null,
       isDeleteModalOpen: false,
       selectedDocumentIDs: new SvelteSet<number>(),
@@ -147,6 +131,7 @@ const generateInitialState = (): AppStore => {
     },
     webview: {
       doc: null,
+      rawDoc: null,
       providerMetadata: null,
       currentFeed: null,
       four_cves: [],
@@ -213,6 +198,7 @@ export const appStore = {
   getKeycloakRealm: () => state.app.config?.keycloak_realm,
   getKeycloakURL: () => state.app.config?.keycloak_url,
   getUpdateInterval: () => state.app.config?.update_interval,
+  getAboutText: () => state.app.config?.about_text,
 
   // Setters
   setFourCVEs: (cves: any) => {
@@ -273,6 +259,10 @@ export const appStore = {
 
   setDocument: (data: any) => {
     state.webview.doc = data;
+  },
+
+  setRawDocument: (data: any) => {
+    state.webview.rawDoc = data;
   },
 
   setSelectedCVE: (cve: string) => {
@@ -416,34 +406,8 @@ export const appStore = {
     state.app.selectedDocumentIDs.clear();
   },
 
-  displayErrorMessage: (msg: string) => {
-    const errorMessage = generateMessage(msg, MESSAGE.ERROR);
-    state.app.errors = [errorMessage, ...state.app.errors];
-  },
-
-  displayWarningMessage: (msg: string) => {
-    const errorMessage = generateMessage(msg, MESSAGE.WARNING);
-    state.app.errors = [errorMessage, ...state.app.errors];
-  },
-
-  displaySuccessMessage: (msg: string) => {
-    const errorMessage = generateMessage(msg, MESSAGE.SUCCESS);
-    state.app.errors = [errorMessage, ...state.app.errors];
-  },
-
-  displayInfoMessage: (msg: string) => {
-    const errorMessage = generateMessage(msg, MESSAGE.INFO);
-    state.app.errors = [errorMessage, ...state.app.errors];
-  },
-
   setRouterParams: (newParams: any) => {
     state.app.routerParams = newParams;
-  },
-
-  removeError: (id: string) => {
-    state.app.errors = state.app.errors.filter((msg: ErrorMessage) => {
-      return msg.id !== id;
-    });
   },
 
   setConfig: (newConfig: any) => {

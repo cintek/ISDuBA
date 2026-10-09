@@ -13,7 +13,6 @@
     Button,
     Dropdown,
     Label,
-    PaginationItem,
     Select,
     TableBody,
     TableBodyCell,
@@ -43,6 +42,9 @@
   import MatchList from "./MatchList.svelte";
   import { routerState } from "$routes/router.svelte";
   import Link from "$lib/Components/Link.svelte";
+  import { CaretDown, CaretUp, GitCommit, Minus, Plus, Trash } from "@boxicons/svelte";
+  import WorkflowStateIcon from "$lib/Advisories/WorkflowStateIcon.svelte";
+  import CPagination from "$lib/Components/CPagination.svelte";
 
   const toggleRow = (i: number) => {
     openRow = openRow === i ? null : i;
@@ -89,6 +91,7 @@
   const uid = $props.id();
 
   const tdClassRelative = `${tdClass} relative`;
+  const tableHeadCellClass = "sticky top-0 bg-white dark:bg-gray-800 z-11";
 
   let disableDiffButtons = $derived(
     appStore.state.app.diff.docA_ID !== undefined && appStore.state.app.diff.docB_ID !== undefined
@@ -178,14 +181,14 @@
 
   let isAdmin = $derived(isRoleIncluded(appStore.getRoles(), [ADMIN]));
 
-  const previous = async () => {
+  const onPrevious = async () => {
     if (offset - limit >= 0) {
       setSearchParameters({
         currentPage: currentPage - 1
       });
     }
   };
-  const next = async () => {
+  const onNext = async () => {
     if (offset + limit <= count) {
       setSearchParameters({
         currentPage: currentPage + 1
@@ -193,7 +196,7 @@
     }
   };
 
-  const first = async () => {
+  const onFirst = async () => {
     setSearchParameters({
       currentPage: 1
     });
@@ -253,9 +256,9 @@
 {/snippet}
 
 <div class="flex-grow">
-  <div class="mt-2 mb-2 flex flex-row items-baseline justify-between">
+  <div class="mt-4 mb-2 flex flex-row items-baseline justify-between">
     {#if documents?.length > 0}
-      <div class="flex flex-row items-baseline gap-8">
+      <div class="flex flex-row gap-8">
         {#if isMultiSelectionAllowed}
           <div class="flex items-center gap-2">
             {#if appStore.isAdmin()}
@@ -268,7 +271,7 @@
                 color="light"
                 disabled={!selectedDocuments || selectedDocuments.length === 0}
               >
-                <i class="bx bx-trash text-red-600"></i>
+                <Trash class="text-red-600" />
               </Button>
             {/if}
             {#if tableType === SEARCHTYPES.ADVISORY}
@@ -278,7 +281,7 @@
                 disabled={workflowOptions.length === 0}
                 id="state-icon"
               >
-                <i class="bx bx-git-commit text-black-700 dark:text-gray-300"></i>
+                <GitCommit class="text-black-700 dark:text-gray-300" />
               </Button>
               <Dropdown
                 bind:isOpen={dropdownOpen}
@@ -318,9 +321,12 @@
         {/if}
         <div class="flex items-baseline gap-2">
           <Select
-            size="md"
+            classes={{
+              select: "h-8 py-0"
+            }}
+            size="sm"
             id="pagecount"
-            class="mt-2 h-8 w-24 !p-2 leading-3"
+            class="w-24"
             items={[
               { name: "10", value: 10 },
               { name: "25", value: 25 },
@@ -347,41 +353,24 @@
         </div>
       </div>
       <div>
-        <div class="mx-3 flex flex-row">
-          <div class:invisible={currentPage === 1} class:flex={true} class:mr-3={true}>
-            <PaginationItem onclick={first}>
-              <i class="bx bx-arrow-to-left"></i>
-            </PaginationItem>
-            <PaginationItem onclick={previous}>
-              <i class="bx bx-chevrons-left"></i>
-            </PaginationItem>
-          </div>
-          <div class="flex items-center">
-            <input
-              class={`${numberOfPages < 10000 ? "w-16" : "w-20"} cursor-pointer border pr-1 text-right dark:bg-gray-800`}
-              onchange={(event: any) => {
-                let tmpCurrentPage = event.target.value;
-                if (!parseInt("" + tmpCurrentPage)) tmpCurrentPage = 1;
-                tmpCurrentPage = Math.floor(tmpCurrentPage);
-                if (tmpCurrentPage < 1) tmpCurrentPage = 1;
-                if (tmpCurrentPage > numberOfPages) tmpCurrentPage = numberOfPages;
-                setSearchParameters({
-                  currentPage: tmpCurrentPage
-                });
-              }}
-              value={currentPage}
-            />
-            <span class="mr-3 ml-2 text-nowrap">of {numberOfPages} pages</span>
-          </div>
-          <div class:invisible={currentPage === numberOfPages} class:flex={true}>
-            <PaginationItem onclick={next}>
-              <i class="bx bx-chevrons-right"></i>
-            </PaginationItem>
-            <PaginationItem onclick={last}>
-              <i class="bx bx-arrow-to-right"></i>
-            </PaginationItem>
-          </div>
-        </div>
+        <CPagination
+          onChange={(event: any) => {
+            let tmpCurrentPage = event.target.value;
+            if (!parseInt("" + tmpCurrentPage)) tmpCurrentPage = 1;
+            tmpCurrentPage = Math.floor(tmpCurrentPage);
+            if (tmpCurrentPage < 1) tmpCurrentPage = 1;
+            if (tmpCurrentPage > numberOfPages) tmpCurrentPage = numberOfPages;
+            setSearchParameters({
+              currentPage: tmpCurrentPage
+            });
+          }}
+          {onFirst}
+          {onPrevious}
+          {onNext}
+          onLast={last}
+          {currentPage}
+          {numberOfPages}
+        />
       </div>
       <div class="mr-3 text-nowrap">
         {#if query}
@@ -403,291 +392,292 @@
 
   <ErrorMessage {error}></ErrorMessage>
   {#if documents?.length > 0}
-    <div class="w-auto">
-      <Table style="w-auto" hoverable={true} border={false}>
-        <TableHead class="cursor-pointer dark:bg-gray-800">
-          {#if isMultiSelectionAllowed}
-            <TableHeadCell class="px-1">
-              <CCheckbox
-                checked={areAllSelected}
-                onClicked={(event) => {
-                  const isChecked = event.target.checked;
-                  if (isChecked) {
-                    for (let i = 0; i < documentIDs.length; i++) {
-                      appStore.addSelectedDocumentID(documentIDs[i]);
-                    }
-                  } else {
-                    appStore.clearSelectedDocumentIDs();
+    <Table
+      classes={{ div: "overflow-clip w-fit" }}
+      class="relative"
+      hoverable={true}
+      border={false}
+    >
+      <TableHead class="cursor-pointer dark:bg-gray-800">
+        {#if isMultiSelectionAllowed}
+          <TableHeadCell class={`px-1 ${tableHeadCellClass}`}>
+            <CCheckbox
+              checked={areAllSelected}
+              onClicked={(event) => {
+                const isChecked = event.target.checked;
+                if (isChecked) {
+                  for (let i = 0; i < documentIDs.length; i++) {
+                    appStore.addSelectedDocumentID(documentIDs[i]);
                   }
-                }}
-              ></CCheckbox>
+                } else {
+                  appStore.clearSelectedDocumentIDs();
+                }
+              }}
+            ></CCheckbox>
+          </TableHeadCell>
+        {/if}
+        <TableHeadCell class={`px-0 ${tableHeadCellClass}`}></TableHeadCell>
+        {#if areThereAnyComments}
+          <TableHeadCell class={`${tablePadding} cursor-default ${tableHeadCellClass}`}
+            >Comment</TableHeadCell
+          >
+        {/if}
+        {#each columns as column, i (`table-1-${uid}-${i}`)}
+          {#if column !== searchColumnName}
+            <TableHeadCell
+              class={`${tablePadding} ${tableHeadCellClass}`}
+              onclick={() => {
+                switchSort(column);
+              }}
+              >{getColumnDisplayName(column)}
+              <div class="flex gap-1">
+                {#if orderBy.find((c) => {
+                  return c === column;
+                }) !== undefined}
+                  <CaretUp />
+                {:else if orderBy.find((c) => {
+                  return c === `-${column}`;
+                }) !== undefined}
+                  <CaretDown />
+                {/if}
+                {getColumnOrder(orderBy, column)}
+              </div>
             </TableHeadCell>
           {/if}
-          <TableHeadCell class="px-0"></TableHeadCell>
-          {#if areThereAnyComments}
-            <TableHeadCell class={`${tablePadding} cursor-default`}>Comment</TableHeadCell>
-          {/if}
-          {#each columns as column, i (`table-1-${uid}-${i}`)}
-            {#if column !== searchColumnName}
-              <TableHeadCell
-                class={tablePadding}
-                onclick={() => {
-                  switchSort(column);
-                }}
-                >{getColumnDisplayName(column)}<i
-                  class:bx={true}
-                  class:bx-caret-up={orderBy.find((c) => {
-                    return c === column;
-                  }) !== undefined}
-                  class:bx-caret-down={orderBy.find((c) => {
-                    return c === `-${column}`;
-                  }) !== undefined}
-                ></i>{getColumnOrder(orderBy, column)}</TableHeadCell
+        {/each}
+      </TableHead>
+      <TableBody>
+        {#each documents as doc, i (`table-2-${uid}-${i}`)}
+          {@const item =
+            [SEARCHTYPES.ADVISORY, SEARCHTYPES.DOCUMENT].includes(tableType) && doc.data
+              ? {
+                  id: doc.id,
+                  ...doc.data[0]
+                }
+              : doc}
+          <tr
+            class={i % 2 == 1
+              ? "cursor-pointer bg-white dark:bg-gray-800"
+              : "cursor-pointer bg-gray-100 dark:bg-gray-700"}
+          >
+            {#if isMultiSelectionAllowed}
+              <TableBodyCell class="px-1">
+                <CCheckbox
+                  checked={appStore.state.app.selectedDocumentIDs.has(item.id)}
+                  onClicked={(event) => {
+                    const isChecked = event.target.checked;
+                    if (isChecked) {
+                      appStore.addSelectedDocumentID(item.id);
+                    } else {
+                      appStore.removeSelectedDocumentID(item.id);
+                    }
+                  }}
+                ></CCheckbox>
+              </TableBodyCell>
+            {/if}
+            <TableBodyCell class="px-0">
+              <div class="flex items-center">
+                {#if isAdmin && tableType !== SEARCHTYPES.EVENT}
+                  <CIconButton
+                    onClicked={() => {
+                      appStore.setDocumentsToDelete([doc]);
+                      appStore.setIsDeleteModalOpen(true);
+                    }}
+                    title={`delete ${item.tracking_id}`}
+                    color="red"
+                  >
+                    <Trash />
+                  </CIconButton>
+                {/if}
+                <button
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    if (appStore.state.app.diff.docA_ID) {
+                      appStore.setDiffDocB_ID(item.id);
+                    } else {
+                      appStore.setDiffDocA_ID(item.id);
+                    }
+                    appStore.openToolbox();
+                    e.preventDefault();
+                  }}
+                  class:invisible={!appStore.state.app.isToolboxOpen &&
+                    appStore.state.app.diff.docA_ID === undefined &&
+                    appStore.state.app.diff.docB_ID === undefined}
+                  disabled={appStore.state.app.diff.docA_ID === item.id.toString() ||
+                    appStore.state.app.diff.docB_ID === item.id.toString() ||
+                    disableDiffButtons}
+                  class="min-w-[26px] p-1"
+                  title={`Add to comparison: ${item.tracking_id}`}
+                >
+                  <Img
+                    src="plus-minus.svg"
+                    class={`${
+                      appStore.state.app.diff.docA_ID === item.id.toString() ||
+                      appStore.state.app.diff.docB_ID === item.id.toString() ||
+                      disableDiffButtons
+                        ? "invert-[70%]"
+                        : "dark:invert"
+                    } min-h-4`}
+                  />
+                </button>
+              </div>
+            </TableBodyCell>
+            {#if areThereAnyComments}
+              <TableBodyCell class={tdClassRelative}>
+                {@render advisoryLink(item)}
+                <div class="m-2 table w-full text-wrap">
+                  {#if item.comments_id}
+                    {#await request(`api/comments/post/${item.comments_id}`, "GET")}
+                      <Spinner color="gray" size="4"></Spinner>
+                    {:then response}
+                      {#if response.ok}
+                        <div class="w-[120pt] max-w-[140pt] text-wrap">
+                          {response.content.message}
+                        </div>
+                      {:else}
+                        <span class="text-red-700">Couldn't load comment.</span>
+                      {/if}
+                    {/await}
+                  {/if}
+                </div></TableBodyCell
               >
             {/if}
-          {/each}
-        </TableHead>
-        <TableBody>
-          {#each documents as doc, i (`table-2-${uid}-${i}`)}
-            {@const item =
-              [SEARCHTYPES.ADVISORY, SEARCHTYPES.DOCUMENT].includes(tableType) && doc.data
-                ? {
-                    id: doc.id,
-                    ...doc.data[0]
-                  }
-                : doc}
-            <tr
-              class={i % 2 == 1
-                ? "cursor-pointer bg-white dark:bg-gray-800"
-                : "cursor-pointer bg-gray-100 dark:bg-gray-700"}
-            >
-              {#if isMultiSelectionAllowed}
-                <TableBodyCell class="px-1">
-                  <CCheckbox
-                    checked={appStore.state.app.selectedDocumentIDs.has(item.id)}
-                    onClicked={(event) => {
-                      const isChecked = event.target.checked;
-                      if (isChecked) {
-                        appStore.addSelectedDocumentID(item.id);
-                      } else {
-                        appStore.removeSelectedDocumentID(item.id);
-                      }
-                    }}
-                  ></CCheckbox>
-                </TableBodyCell>
-              {/if}
-              <TableBodyCell class="px-0">
-                <div class="flex items-center">
-                  {#if isAdmin && tableType !== SEARCHTYPES.EVENT}
-                    <CIconButton
-                      onClicked={() => {
-                        appStore.setDocumentsToDelete([doc]);
-                        appStore.setIsDeleteModalOpen(true);
-                      }}
-                      title={`delete ${item.tracking_id}`}
-                      icon="trash"
-                      color="red"
-                    ></CIconButton>
-                  {/if}
-                  <button
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      if (appStore.state.app.diff.docA_ID) {
-                        appStore.setDiffDocB_ID(item.id);
-                      } else {
-                        appStore.setDiffDocA_ID(item.id);
-                      }
-                      appStore.openToolbox();
-                      e.preventDefault();
-                    }}
-                    class:invisible={!appStore.state.app.isToolboxOpen &&
-                      appStore.state.app.diff.docA_ID === undefined &&
-                      appStore.state.app.diff.docB_ID === undefined}
-                    disabled={appStore.state.app.diff.docA_ID === item.id.toString() ||
-                      appStore.state.app.diff.docB_ID === item.id.toString() ||
-                      disableDiffButtons}
-                    class="min-w-[26px] p-1"
-                    title={`Add to comparison: ${item.tracking_id}`}
-                  >
-                    <Img
-                      src="plus-minus.svg"
-                      class={`${
-                        appStore.state.app.diff.docA_ID === item.id.toString() ||
-                        appStore.state.app.diff.docB_ID === item.id.toString() ||
-                        disableDiffButtons
-                          ? "invert-[70%]"
-                          : "dark:invert"
-                      } min-h-4`}
-                    />
-                  </button>
-                </div>
-              </TableBodyCell>
-              {#if areThereAnyComments}
-                <TableBodyCell class={tdClassRelative}>
-                  {@render advisoryLink(item)}
-                  <div class="m-2 table w-full text-wrap">
-                    {#if item.comments_id}
-                      {#await request(`api/comments/post/${item.comments_id}`, "GET")}
-                        <Spinner color="gray" size="4"></Spinner>
-                      {:then response}
-                        {#if response.ok}
-                          <div class="w-[120pt] max-w-[140pt] text-wrap">
-                            {response.content.message}
-                          </div>
-                        {:else}
-                          <span class="text-red-700">Couldn't load comment.</span>
-                        {/if}
-                      {/await}
-                    {/if}
-                  </div></TableBodyCell
-                >
-              {/if}
-              {#each columns as column, i (`table-3-${uid}-${i}`)}
-                {#if column !== searchColumnName}
-                  {#if column === "cvss_v3_score" || column === "cvss_v2_score"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <CVSS baseScore={item[column]}></CVSS>
-                    </TableBodyCell>
-                  {:else if column === "ssvc"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-16 text-wrap">
-                        {#if item[column]}
-                          <SSVCBadge vector={item[column]}></SSVCBadge>
-                        {/if}
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "state"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-full text-wrap">
-                        <i
-                          title={item[column]}
-                          class:bx={true}
-                          class:bxs-certification={item[column] === "new"}
-                          class:bx-show={item[column] === "read"}
-                          class:bxs-analyse={item[column] === "assessing"}
-                          class:bx-book-open={item[column] === "review"}
-                          class:bx-archive={item[column] === "archived"}
-                          class:bx-trash={item[column] === "delete"}
-                        ></i>
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "initial_release_date"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-full text-wrap">
-                        {item.initial_release_date?.split("T")[0]}
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "current_release_date"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-full text-wrap">
-                        {item.current_release_date?.split("T")[0]}
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "title"}
-                    <TableBodyCell class={title + " relative"}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-[min(250px)] text-wrap">
-                        <span title={item[column]}>{item[column]}</span>
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "publisher"}
-                    <TableBodyCell class={publisher + " relative"}>
-                      {@render advisoryLink(item)}
-                      <div class={publisher + " m-2"}>
-                        <span title={item[column]}>{getPublisher(item[column], innerWidth)}</span>
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "recent"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-full text-wrap">
-                        <span title={item[column]}
-                          >{item[column] ? item[column].split("T")[0] : ""}</span
-                        >
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "four_cves"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {#if !(item[column] && item[column][0] && item[column].length > 1)}
-                        {@render advisoryLink(item)}
+            {#each columns as column, i (`table-3-${uid}-${i}`)}
+              {#if column !== searchColumnName}
+                {#if column === "cvss_v3_score" || column === "cvss_v2_score"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <CVSS baseScore={item[column]}></CVSS>
+                  </TableBodyCell>
+                {:else if column === "ssvc"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-16 text-wrap">
+                      {#if item[column]}
+                        <SSVCBadge vector={item[column]}></SSVCBadge>
                       {/if}
-                      <div class="w-32">
-                        <div class="z-50 table p-2 text-wrap">
-                          {#if item[column] && item[column][0]}
-                            <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            {#if item[column].length > 1}
-                              <div
-                                class="mr-2 flex cursor-pointer items-center"
-                                onclick={(event) => {
-                                  event.stopPropagation();
-                                  toggleRow(i);
-                                }}
-                              >
-                                <div class="flex-grow">
-                                  {item[column][0]}
-                                  {#if openRow === i}
-                                    <div>
-                                      {#each item.four_cves as cve, i (`table-4-${uid}-${i}`)}
-                                        {#if i !== 0}
-                                          <p>{cve}</p>
-                                        {/if}
-                                      {/each}
-                                    </div>
-                                  {/if}
-                                </div>
-                                <span>
-                                  {#if openRow === i}
-                                    <i class="bx bx-minus"></i>
-                                  {:else}
-                                    <i class="bx bx-plus"></i>
-                                  {/if}
-                                </span>
+                    </div></TableBodyCell
+                  >
+                {:else if column === "state"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-full text-wrap" title={item[column]}>
+                      <WorkflowStateIcon advisoryState={item[column]} />
+                    </div></TableBodyCell
+                  >
+                {:else if column === "initial_release_date"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-full text-wrap">
+                      {item.initial_release_date?.split("T")[0]}
+                    </div></TableBodyCell
+                  >
+                {:else if column === "current_release_date"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-full text-wrap">
+                      {item.current_release_date?.split("T")[0]}
+                    </div></TableBodyCell
+                  >
+                {:else if column === "title"}
+                  <TableBodyCell class={title + " relative"}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-[min(250px)] text-wrap">
+                      <span title={item[column]}>{item[column]}</span>
+                    </div></TableBodyCell
+                  >
+                {:else if column === "publisher"}
+                  <TableBodyCell class={publisher + " relative"}>
+                    {@render advisoryLink(item)}
+                    <div class={publisher + " m-2"}>
+                      <span title={item[column]}>{getPublisher(item[column], innerWidth)}</span>
+                    </div></TableBodyCell
+                  >
+                {:else if column === "recent"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-full text-wrap">
+                      <span title={item[column]}
+                        >{item[column] ? item[column].split("T")[0] : ""}</span
+                      >
+                    </div></TableBodyCell
+                  >
+                {:else if column === "four_cves"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {#if !(item[column] && item[column][0] && item[column].length > 1)}
+                      {@render advisoryLink(item)}
+                    {/if}
+                    <div class="w-32">
+                      <div class="z-50 table p-2 text-wrap">
+                        {#if item[column] && item[column][0]}
+                          <!-- svelte-ignore a11y_click_events_have_key_events -->
+                          <!-- svelte-ignore a11y_no_static_element_interactions -->
+                          {#if item[column].length > 1}
+                            <div
+                              class="mr-2 flex cursor-pointer items-center"
+                              onclick={(event) => {
+                                event.stopPropagation();
+                                toggleRow(i);
+                              }}
+                            >
+                              <div class="flex-grow">
+                                {item[column][0]}
+                                {#if openRow === i}
+                                  <div>
+                                    {#each item.four_cves as cve, i (`table-4-${uid}-${i}`)}
+                                      {#if i !== 0}
+                                        <p>{cve}</p>
+                                      {/if}
+                                    {/each}
+                                  </div>
+                                {/if}
                               </div>
-                            {:else}
-                              <span>{item[column][0]}</span>
-                            {/if}
+                              <span>
+                                {#if openRow === i}
+                                  <Minus />
+                                {:else}
+                                  <Plus />
+                                {/if}
+                              </span>
+                            </div>
+                          {:else}
+                            <span>{item[column][0]}</span>
                           {/if}
-                        </div>
-                      </div></TableBodyCell
-                    >
-                  {:else if column === "critical"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <CVSS baseScore={item[column]}></CVSS>
-                    </TableBodyCell>
-                  {:else if column === "tracking_id"}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-40 text-wrap">
-                        {item[column] ?? ""}
-                      </div></TableBodyCell
-                    >
-                  {:else}
-                    <TableBodyCell class={tdClassRelative}>
-                      {@render advisoryLink(item)}
-                      <div class="m-2 table w-full text-wrap">
-                        {item[column] ?? ""}
-                      </div></TableBodyCell
-                    >
-                  {/if}
+                        {/if}
+                      </div>
+                    </div></TableBodyCell
+                  >
+                {:else if column === "critical"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <CVSS baseScore={item[column]}></CVSS>
+                  </TableBodyCell>
+                {:else if column === "tracking_id"}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-40 text-wrap">
+                      {item[column] ?? ""}
+                    </div></TableBodyCell
+                  >
+                {:else}
+                  <TableBodyCell class={tdClassRelative}>
+                    {@render advisoryLink(item)}
+                    <div class="m-2 table w-full text-wrap">
+                      {item[column] ?? ""}
+                    </div></TableBodyCell
+                  >
                 {/if}
-              {/each}
-            </tr>
-            {#if [SEARCHTYPES.ADVISORY, SEARCHTYPES.DOCUMENT].includes(tableType)}
-              {#if doc.data}
-                <MatchList doc={item} externalIndex={i} matches={doc.data} index={i} />
               {/if}
+            {/each}
+          </tr>
+          {#if [SEARCHTYPES.ADVISORY, SEARCHTYPES.DOCUMENT].includes(tableType)}
+            {#if doc.data}
+              <MatchList doc={item} externalIndex={i} matches={doc.data} index={i} />
             {/if}
-          {/each}
-        </TableBody>
-      </Table>
-    </div>
+          {/if}
+        {/each}
+      </TableBody>
+    </Table>
   {:else if query}
     No results were found.
   {/if}

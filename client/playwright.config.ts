@@ -33,6 +33,8 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        // The clipboard permissions are only needed for Chromium
+        permissions: ["clipboard-read", "clipboard-write"],
         // Use prepared auth state.
         storageState: "playwright/.auth/user.json",
         screenshot: "only-on-failure",
@@ -89,7 +91,7 @@ export default defineConfig({
             }
           },
 
-          reports: ["v8", "console-details"]
+          reports: ["v8", "markdown-summary"]
         }
       }
     ]

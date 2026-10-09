@@ -18,6 +18,7 @@
   import type { ErrorDetails } from "$lib/Errors/error";
   import CIconButton from "$lib/Components/CIconButton.svelte";
   import type { Snippet } from "svelte";
+  import { Archive, Circle, Plus, Trash } from "@boxicons/svelte";
 
   interface Props {
     edit?: boolean;
@@ -30,7 +31,7 @@
 
   let {
     edit = false,
-    feeds = [],
+    feeds = $bindable([]),
     placeholderFeed = false,
     updateFeed = async (_feed: Feed) => {},
     clickFeed = async (_feed: Feed) => {},
@@ -180,13 +181,9 @@
           {#if placeholderFeed}
             <TableBodyCell class={tdClass}>{feed.label}</TableBodyCell>
             <TableBodyCell onclick={async () => await clickFeed(feed)} class={tdClass}>
-              <button
-                class="cursor-pointer"
-                onclick={async () => await clickFeed(feed)}
-                aria-label="View feed archive"
-              >
-                <i class="bx bx-archive"> </i></button
-              >
+              <button onclick={async () => await clickFeed(feed)} aria-label="View feed archive">
+                <Archive />
+              </button>
             </TableBodyCell>
           {:else}
             <TableBodyCell class={tdClass}>
@@ -197,8 +194,9 @@
                     await updateFeed(feed);
                     feed.id = undefined;
                   }}
-                  icon="trash"
-                ></CIconButton>
+                >
+                  <Trash />
+                </CIconButton>
               {:else}
                 <CIconButton
                   onClicked={async () => {
@@ -206,8 +204,9 @@
                     await updateFeed(feed);
                   }}
                   ariaLabel={`Enable feed with label ${feed.label}`}
-                  icon="plus"
-                ></CIconButton>
+                >
+                  <Plus />
+                </CIconButton>
               {/if}
             </TableBodyCell>
             <TableBodyCell
@@ -215,10 +214,8 @@
               class={`${tdClass} break-all whitespace-normal`}
             >
               {#if edit && feed.enable}
-                <button
-                  class="cursor-pointer"
-                  onclick={async () => await clickFeed(feed)}
-                  aria-label="View feed details">{feed.url}</button
+                <button onclick={async () => await clickFeed(feed)} aria-label="View feed details"
+                  >{feed.url}</button
                 >
               {:else}
                 <span class="text-amber-600">
@@ -245,18 +242,17 @@
               <TableBodyCell class={tdClass}
                 >{(feed.stats?.downloading ?? 0) + "/" + (feed.stats?.waiting ?? 0)}</TableBodyCell
               >
-              <TableBodyCell class={tdClass}
-                ><i class={"bx " + (feed.healthy ? "bxs-circle" : "bx-circle")}></i></TableBodyCell
-              >
+              <TableBodyCell class={tdClass}>
+                <Circle pack={feed.healthy ? "filled" : "basic"} />
+              </TableBodyCell>
               {#if feed.enable}
                 <TableBodyCell onclick={async () => await clickFeed(feed)} class={tdClass}>
                   <button
-                    class="cursor-pointer"
                     onclick={async () => await clickFeed(feed)}
                     aria-label="View feed archive"
                   >
-                    <i class="bx bx-archive"> </i></button
-                  >
+                    <Archive />
+                  </button>
                 </TableBodyCell>
               {/if}
             {/if}

@@ -19,7 +19,7 @@ import (
 const DefaultConfigFile = "isduba.toml"
 
 const (
-	defaultAdvisoryUploadLimit   = 512 * 1024 * 1024
+	defaultAdvisoryUploadLimit   = 15 * 1024 * 1024
 	defaultAnonymousEventLogging = false
 )
 
@@ -134,6 +134,7 @@ const (
 	defaultClientKeycloakClientID = "auth"
 	defaultClientUpdateInterval   = 5 * time.Minute
 	defaultClientIdleTimeout      = 30 * time.Minute
+	defaultClientAboutText        = "Hosted by <a href=\"https://example.com\">Example Corp</a>"
 )
 
 const (

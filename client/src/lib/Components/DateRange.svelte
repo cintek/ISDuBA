@@ -12,6 +12,7 @@
   import { SvelteDate } from "svelte/reactivity";
   import { Button, Input, Label } from "flowbite-svelte";
   import TimeInput from "./TimeInput.svelte";
+  import { X } from "@boxicons/svelte";
 
   interface Props {
     clearable?: boolean;
@@ -32,10 +33,12 @@
   const uuid = crypto.randomUUID();
   const fromId = `from-${uuid}`;
   const toId = `to-${uuid}`;
-  const iconClass = "bx bx-x text-lg";
+  const iconClass = "text-lg";
   const resetButtonClass = "rounded-s-none px-3";
   const defaultInputClass = "h-fit";
-  const inputClass = `${defaultInputClass} ${clearable || showTimeControls ? "rounded-e-none" : ""}`;
+  let inputClass = $derived(
+    `${defaultInputClass} ${clearable || showTimeControls ? "rounded-e-none" : ""}`
+  );
   let hideFrom = $state(false);
   let hideTo = $state(false);
   let fromString: string | undefined = $state();
@@ -163,7 +166,7 @@
       {/if}
       {#if clearable}
         <Button color="light" class={resetButtonClass} onclick={clearFrom}>
-          <i class={iconClass}></i>
+          <X class={iconClass} />
         </Button>
       {/if}
     </div>
@@ -190,7 +193,7 @@
       {/if}
       {#if clearable}
         <Button color="light" class={resetButtonClass} onclick={clearTo}>
-          <i class={iconClass}></i>
+          <X class={iconClass} />
         </Button>
       {/if}
     </div>

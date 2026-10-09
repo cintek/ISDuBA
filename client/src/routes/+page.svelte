@@ -11,7 +11,6 @@
   import type { PageProps } from "./$types";
   import Router from "svelte-spa-router";
   import "../app.css";
-  import "boxicons/css/boxicons.min.css";
   import SideNav from "$lib/SideNav.svelte";
   import Dashboard from "$lib/Dashboard/Dashboard.svelte";
   import Statistics from "$lib/Statistics/Overview.svelte";
@@ -24,7 +23,6 @@
   import NotFound from "$lib/NotFound.svelte";
   import { appStore } from "$lib/store.svelte";
   import { push, replace } from "svelte-spa-router";
-  import Messages from "$lib/Messages/Messages.svelte";
   import Login from "$lib/Login/Login.svelte";
   import QueryDesigner from "$lib/Queries/QueryDesigner.svelte";
   import QueryOverview from "$lib/Queries/Overview.svelte";
@@ -270,22 +268,17 @@
   </script>
 </svelte:head>
 
-<div class="bg-primary-700 flex h-screen dark:bg-gray-800 dark:text-white">
-  <div>
-    <SideNav></SideNav>
-  </div>
-  <main
-    class="flex max-h-screen w-full flex-col overflow-auto bg-white px-2 py-6 lg:px-6 dark:bg-gray-800"
-  >
-    {#if appStore.state.app.userManager}
-      <Router
-        {routes}
-        onConditionsFailed={conditionsFailed}
-        onRouteLoaded={routeLoaded}
-        {onRouteLoading}
-      />
-    {/if}
-    <ErrorMessage error={data.loadConfigError ?? null}></ErrorMessage>
-  </main>
-  <Messages></Messages>
-</div>
+<SideNav />
+<main
+  class="mt-6 flex max-h-screen w-full flex-col overflow-auto bg-white px-2 pb-6 lg:px-6 dark:bg-gray-800"
+>
+  {#if appStore.state.app.userManager}
+    <Router
+      {routes}
+      onConditionsFailed={conditionsFailed}
+      onRouteLoaded={routeLoaded}
+      {onRouteLoading}
+    />
+  {/if}
+  <ErrorMessage error={data.loadConfigError ?? null}></ErrorMessage>
+</main>

@@ -12,8 +12,13 @@
   import { Toast } from "flowbite-svelte";
   import { MESSAGE } from "./messagetypes";
   import { onMount } from "svelte";
-  import { appStore } from "$lib/store.svelte";
   import { blur } from "svelte/transition";
+  import {
+    MessageCircle,
+    MessageCircleCheck,
+    MessageCircleExclamation,
+    MessageCircleX
+  } from "@boxicons/svelte";
 
   interface Props {
     error?: any;
@@ -42,7 +47,6 @@
     if (!autoclose) return;
     setTimeout(() => {
       open = false;
-      appStore.removeError(error.id);
     }, 8000);
   });
 </script>
@@ -52,20 +56,19 @@
     color={coloryByType(error.type)}
     bind:toastStatus={open}
     transition={blur}
-    onclose={() => {
-      appStore.removeError(error.id);
-    }}
     class={divClass}
     {dismissable}
   >
     {#snippet icon()}
-      <i
-        class:bx={true}
-        class:bxs-message-rounded-x={error.type === MESSAGE.ERROR}
-        class:bxs-message-rounded-error={error.type === MESSAGE.WARNING}
-        class:bxs-message-rounded-check={error.type === MESSAGE.SUCCESS}
-        class:bxs-message-rounded={error.type === MESSAGE.INFO}
-      ></i>
+      {#if error.type === MESSAGE.ERROR}
+        <MessageCircleX pack="filled" />
+      {:else if error.type === MESSAGE.WARNING}
+        <MessageCircleExclamation pack="filled" />
+      {:else if error.type === MESSAGE.SUCCESS}
+        <MessageCircleCheck pack="filled" />
+      {:else if error.type === MESSAGE.INFO}
+        <MessageCircle pack="filled" />
+      {/if}
     {/snippet}
     <span class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{error.type}</span>
     <div class="mb-2 text-sm font-normal">{error.message}</div>

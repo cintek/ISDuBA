@@ -16,12 +16,26 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByText("advisories in total")).toBeVisible();
   await page.getByPlaceholder("Enter a search term").fill("avendor");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page.getByText("Avendor-advisory-0004", { exact: true })).toBeVisible();
-  await expect(page.getByText("Avendor-advisory-0005", { exact: true })).toBeVisible();
+  // First try to find a link to a match because that ensures that the final results and their
+  // matches are loaded. Otherwise it might be that PW finds the documents because they were
+  // already in the initially shown list and then they are detached from the DOM because the
+  // browser renders the updated list.
+  const searchMatch = page.getByRole("link", { name: "Navigate directly to the 1. match" }).first();
+  await searchMatch.scrollIntoViewIfNeeded();
+  await expect(searchMatch).toBeVisible();
+  const firstDoc = page.getByText("Avendor-advisory-0004", { exact: true });
+  await firstDoc.scrollIntoViewIfNeeded();
+  await expect(firstDoc).toBeVisible();
+  const secondDoc = page.getByText("Avendor-advisory-0005", { exact: true });
+  await secondDoc.scrollIntoViewIfNeeded();
+  await expect(secondDoc).toBeVisible();
 });
 
 test("Advisory view is working", async ({ page }) => {
-  await page.getByText("Avendor-advisory-0004", { exact: true }).first().click({ force: true });
+  test.slow(); // Easy way to triple the default timeout
+  const doc = page.getByText("Avendor-advisory-0004", { exact: true }).first();
+  await doc.scrollIntoViewIfNeeded();
+  await doc.click({ force: true });
   await expect(page.getByText("5.7 (MEDIUM)")).toBeVisible();
   await expect(page.getByText("Test CSAF document")).toBeVisible();
   // The tests run with two browsers so there will be two comments. The random
@@ -41,7 +55,11 @@ test("Advisory view is working", async ({ page }) => {
 
   // Test SSVC calculator
   await page.getByTitle("Edit SSVC").click();
-  await page.getByRole("button", { name: "Evaluate" }).click();
+  await expect(page.getByText("Enter a SSVC directly")).toBeVisible();
+  const evaluateButton = page.getByRole("button", { name: "Evaluate" });
+  // Wait until button is visible after animation
+  await expect(evaluateButton).toBeVisible();
+  await evaluateButton.click();
   // First test to go back and restart
   await page.getByRole("button", { name: "poc" }).click();
   await page.getByRole("button", { name: "Back" }).click();
@@ -81,6 +99,24 @@ test("Advisory view is working", async ({ page }) => {
   await page.getByRole("button", { name: "Show changes" }).click();
   await page.getByRole("button", { name: "Inline" }).click();
   await page.getByRole("button", { name: "Hide changes" }).click();
+
+  // Test view of raw document
+  expect(page.getByRole("button", { name: "Download document" })).toBeVisible();
+  await page.getByRole("button", { name: "View raw document" }).click();
+  expect(page.getByRole("heading", { name: "Raw document" })).toBeVisible();
+  expect(page.getByText(`"document": {`)).toBeVisible();
+  const copyButton = page.getByRole("button", { name: "Copy document" });
+  await copyButton.click();
+  expect(page.getByText("Copied")).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await copyButton.waitFor({ state: "hidden" });
+
+  // Switch version and check if there is a link at the comment that leads to the previous document
+  await page
+    .getByRole("button", { disabled: false, description: /Switch to version.*/ })
+    .first()
+    .click();
+  await expect(page.getByRole("link", { name: /on version: .*/ }).first()).toBeVisible();
 });
 
 test("Tabs with details about document are working", async ({ page }) => {
@@ -91,10 +127,15 @@ test("Tabs with details about document are working", async ({ page }) => {
   const scoresCollapsible = await page.getByText("Scores").first();
   await scoresCollapsible.scrollIntoViewIfNeeded({ timeout: 2000 });
   await scoresCollapsible.click({ force: true });
+  const idsCollapsible = page.getByText("IDs").first();
+  await idsCollapsible.scrollIntoViewIfNeeded({ timeout: 2000 });
+  await idsCollapsible.click({ force: true });
+  expect(page.getByText("GitHub Issue")).toBeVisible();
 
   await page.getByRole("tab", { name: "Notes" }).click();
   await expect(page.getByText("Auto generated test CSAF document")).toBeVisible();
 
+  await page.getByRole("tab", { name: "Product tree" }).click();
   await page.getByText("AVendor product_1 1.1").first().click();
   await page.getByText("pkg:npm/acme/CSAFPID_0001").scrollIntoViewIfNeeded({ timeout: 2000 });
 });

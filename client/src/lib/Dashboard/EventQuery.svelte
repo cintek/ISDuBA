@@ -20,9 +20,9 @@
   import { push } from "$routes/router.svelte";
   import { convertVectorToSSVCObject } from "$lib/Advisories/SSVC/SSVCCalculator";
   import { getRelativeTime } from "$lib/time";
-  import SSVCBadge from "$lib/Advisories/SSVC/SSVCBadge.svelte";
   import ShowMoreButton from "./ShowMoreButton.svelte";
   import CBadge from "$lib/Components/CBadge.svelte";
+  import ActivityBottom from "./ActivityBottom.svelte";
 
   interface Props {
     storedQuery: any;
@@ -183,11 +183,11 @@
                     {activity.actor} mentioned you
                   {:else if activity.event === "add_comment"}
                     {activity.actor} added a comment
-                  {:else if activity.event === "add_ssvc"}
+                  {:else if activity.event === "add_sscv"}
                     {activity.actor} added a SSVC "{activity.ssvcLabel}""
                   {:else if activity.event === "import_document"}
                     {activity.actor} imported a document
-                  {:else if activity.event === "change_ssvc" || activity.event === "change_sscv"}
+                  {:else if activity.event === "change_sscv"}
                     {activity.actor} changed a SSVC to "{activity.ssvcLabel}"
                   {:else if activity.event === "change_comment"}
                     {activity.actor} changed a comment
@@ -221,23 +221,11 @@
               {/snippet}
               {#snippet bottomBottomSlot()}
                 <div class="mt-2">
-                  <div class="flex items-center gap-4 text-xs text-slate-400">
-                    {#if activity.comments !== undefined}
-                      <div class="flex items-center gap-1">
-                        <i class="bx bx-comment"></i>
-                        <span>{activity.comments}</span>
-                      </div>
-                    {/if}
-                    {#if activity.versions !== undefined}
-                      <div class="flex items-center gap-1">
-                        <i class="bx bx-collection"></i>
-                        <span>{activity.versions}</span>
-                      </div>
-                    {/if}
-                    {#if activity.ssvc}
-                      <SSVCBadge vector={activity.ssvc}></SSVCBadge>
-                    {/if}
-                  </div>
+                  <ActivityBottom
+                    comments={activity.comments}
+                    ssvc={activity.ssvc}
+                    versions={activity.versions}
+                  />
                   {#if Object.keys(activity).filter((k) => !ignoredColumns.includes(k)).length > 0}
                     <div
                       class="my-2 rounded-sm border p-2 text-xs text-gray-800 dark:text-gray-200"

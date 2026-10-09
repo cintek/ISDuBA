@@ -17,6 +17,7 @@
   import { getContext } from "svelte";
   import Link from "$lib/Components/Link.svelte";
   import SearchableText from "../SearchableText.svelte";
+  import { ArrowOutUpRightSquare, Link as LinkIcon } from "@boxicons/svelte";
 
   interface Props {
     basePath: string;
@@ -42,7 +43,7 @@
   let baseSeverity = $derived(appStore.state.webview.doc?.highestScore?.baseSeverity);
   let baseScore = $derived(appStore.state.webview.doc?.highestScore?.baseScore);
   const cellStyleValue = "content-center px-6 py-0 [word-wrap:break-word] hyphens-auto";
-  const cellStyleKey = "content-center w-40 py-0";
+  const cellStyleKey = "content-center w-40 max-w-full py-0 text-balance";
 
   const openRelatedDocuments = () => {
     // Use push of external router since we want PrevNext to disappear when user navigates to related
@@ -70,9 +71,15 @@
       {#if relatedDocuments?.()}
         {@const len = Object.keys(relatedDocuments()).length}
         {#if len > 0}
-          <Button onclick={openRelatedDocuments} color="light" size="xs" class="h-7">
+          <Button
+            onclick={openRelatedDocuments}
+            color="light"
+            size="xs"
+            class="h-7"
+            title="Open related documents"
+          >
             <div class="flex items-center">
-              <i class="bx bx-link-alt bx-rotate-90"></i>
+              <LinkIcon rotate={90} />
               {len}
             </div>
           </Button>
@@ -81,7 +88,7 @@
     </div>
   </div>
   <div class="flex w-full flex-row flex-wrap">
-    <div class="grid w-full grid-cols-[auto_minmax(0,_1fr)] gap-1.5 text-sm">
+    <div class="grid w-full grid-cols-[minmax(140px,1fr)_auto] gap-1.5 text-sm">
       <div class={cellStyleKey}>Publisher name</div>
       <div class={cellStyleValue}>
         <SearchableText text={publisherName} textPath="/document/publisher/name" />
@@ -90,7 +97,7 @@
       <div class={cellStyleValue}>
         {#if publisherNamespace}
           <Link href={publisherNamespace} class="underline">
-            <i class="bx bx-link"></i>
+            <ArrowOutUpRightSquare />
             <SearchableText text={publisherNamespace} textPath="/document/publisher/namespace" />
           </Link>
         {/if}
@@ -157,7 +164,7 @@
           <div class={cellStyleKey}>Aggregate severity namespace</div>
           <div class={cellStyleValue}>
             <Link href={appStore.state.webview.doc?.aggregateSeverity.namespace} class="underline">
-              <i class="bx bx-link"></i>
+              <ArrowOutUpRightSquare />
               <SearchableText
                 text={appStore.state.webview.doc.aggregateSeverity.namespace}
                 textPath="/document/aggregate_severity/namespace"

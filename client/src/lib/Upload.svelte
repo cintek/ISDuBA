@@ -9,9 +9,23 @@
 -->
 
 <script lang="ts">
-  import { Button, Card, Label, Listgroup, ListgroupItem } from "flowbite-svelte";
+  import { slide } from "svelte/transition";
+  import {
+    Button,
+    Listgroup,
+    ListgroupItem,
+    Radio,
+    Table,
+    TableBody,
+    TableBodyCell,
+    TableBodyRow,
+    TableHead,
+    TableHeadCell
+  } from "flowbite-svelte";
   import { type UploadInfo } from "$lib/Sources/source";
   import CFileinput from "./Components/CFileinput.svelte";
+  import { CheckCircle, XCircle } from "@boxicons/svelte";
+  import SectionHeader from "./SectionHeader.svelte";
 
   interface Props {
     cancel: () => any;
@@ -39,83 +53,150 @@
   const getColor = (uploadInfo: UploadInfo) => {
     let success = uploadInfo?.success;
     if (success !== undefined) {
-      return success ? "text-green-600" : "text-red-600";
+      // The returned colors are from the default palette of TailwindCSS:
+      // https://tailwindcss.com/docs/colors#default-color-palette-reference
+      return success
+        ? // color-green-600
+          "oklch(62.7% 0.194 149.214)"
+        : // color-red-600
+          "oklch(57.7% 0.245 27.325)";
     }
     return "";
   };
   let files: FileList | undefined = $state(undefined);
   let filesCache: FileList | undefined = $state(undefined);
   let isUploading = $state(false);
+
+  type UploadFilter = "successful" | "duplicate" | "error" | "total";
+  let filterBy: UploadFilter = $state("total");
+
+  let duplicateCount = $derived.by(() => {
+    return uploadInfo.filter((info) => info.requestStatus === 409).length;
+  });
+
+  let failureCount = $derived.by(() => {
+    return uploadInfo.filter((info) => !info.success && info.requestStatus !== 409).length;
+  });
+
+  let successCount = $derived.by(() => {
+    return uploadInfo.filter((info) => info.success).length;
+  });
+
   $effect(() => {
     if (files) {
       uploadInfo = [];
     }
   });
+
+  const shouldBeDisplayed = (info: UploadInfo) => {
+    return (
+      filterBy === "total" ||
+      (filterBy === "duplicate" && info.requestStatus === 409) ||
+      (filterBy === "successful" && info.success) ||
+      (filterBy === "error" && !info.success && info.requestStatus !== 409)
+    );
+  };
 </script>
 
-<Card size="lg" class="p-4">
-  <div class={`flex flex-col gap-4 ${files?.length && files.length > 1 ? "mb-4" : "mb-40"}`}>
-    <div>
-      <Label class="pb-2">{label}</Label>
-      <CFileinput
-        accept=".json"
-        disabled={isUploading}
-        id="upload-files"
-        multiple
-        bind:files
-        onChanged={() => {
-          filesCache = undefined;
-        }}
-      />
-    </div>
-    <div class="flex items-center justify-end gap-2">
-      {#if isUploading}
-        <div class="flex w-fit gap-2">
-          <span>Uploading ...</span>
-          <div class="w-fit min-w-8">
-            <span class="min-w-16">{uploadInfo?.length}</span>/<span class="min-w-16"
-              >{files?.length ?? 1}</span
-            >
-          </div>
+<SectionHeader title={label} />
+<div class={`flex w-2xl flex-col gap-4 ${files?.length && files.length > 1 ? "mb-4" : "mb-40"}`}>
+  <div>
+    <CFileinput
+      accept=".json"
+      disabled={isUploading}
+      id="upload-files"
+      multiple
+      bind:files
+      onChanged={() => {
+        filesCache = undefined;
+      }}
+    />
+  </div>
+  <div class="flex items-center justify-end gap-2">
+    {#if isUploading}
+      <div class="flex w-fit gap-2">
+        <span>Uploading ...</span>
+        <div class="w-fit min-w-8">
+          <span class="min-w-16">{uploadInfo?.length}</span>/<span class="min-w-16"
+            >{files?.length ?? 1}</span
+          >
         </div>
-      {/if}
-      {#if isUploading}
-        <Button
-          onclick={() => {
-            cancel();
-          }}
-          color="red">Cancel</Button
-        >
-      {/if}
+      </div>
+    {/if}
+    {#if isUploading}
       <Button
-        onclick={async () => {
-          isUploading = true;
-          setTimeout(async () => {
-            if (files) {
-              filesCache = files;
-              uploadInfo = await upload(files, (info: UploadInfo[]) => {
-                uploadInfo = info;
-              });
-            }
-            files = undefined;
-            isUploading = false;
-          });
+        onclick={() => {
+          cancel();
         }}
-        color="primary"
-        disabled={isUploading || !files || files.length === 0}>Upload</Button
+        color="red">Cancel</Button
       >
-    </div>
-    {#if filesCache}
-      <Listgroup class="mt-6">
-        {#each filesCache as file, i (`upload-1-${uid}-${i}`)}
-          {@const info = uploadInfo[i]}
-          {@const color = getColor(info)}
+    {/if}
+    <Button
+      onclick={async () => {
+        isUploading = true;
+        setTimeout(async () => {
+          if (files) {
+            filesCache = files;
+            uploadInfo = await upload(files, (info: UploadInfo[]) => {
+              uploadInfo = info;
+            });
+          }
+          files = undefined;
+          isUploading = false;
+        });
+      }}
+      color="primary"
+      disabled={isUploading || !files || files.length === 0}>Upload</Button
+    >
+  </div>
+  {#if filesCache}
+    {#if !isUploading}
+      <div transition:slide>
+        <Table>
+          <TableHead>
+            <TableHeadCell class="text-center">Successful</TableHeadCell>
+            <TableHeadCell class="text-center">Already existing</TableHeadCell>
+            <TableHeadCell class="text-center">Other Errors</TableHeadCell>
+            <TableHeadCell class="text-center">Total</TableHeadCell>
+          </TableHead>
+          <TableBody>
+            <TableBodyRow>
+              <TableBodyCell>
+                <Radio bind:group={filterBy} labelClass="justify-center" value="successful"
+                  >{successCount}</Radio
+                >
+              </TableBodyCell>
+              <TableBodyCell>
+                <Radio bind:group={filterBy} labelClass="justify-center" value="duplicate"
+                  >{duplicateCount}</Radio
+                >
+              </TableBodyCell>
+              <TableBodyCell>
+                <Radio bind:group={filterBy} labelClass="justify-center" value="error"
+                  >{failureCount}</Radio
+                >
+              </TableBodyCell>
+              <TableBodyCell>
+                <Radio bind:group={filterBy} labelClass="justify-center" value="total"
+                  >{uploadInfo.length}</Radio
+                >
+              </TableBodyCell>
+            </TableBodyRow>
+          </TableBody>
+        </Table>
+      </div>
+    {/if}
+    <Listgroup class="mt-6">
+      {#each filesCache as file, i (`upload-1-${uid}-${i}`)}
+        {@const info = uploadInfo[i]}
+        {@const color = getColor(info)}
+        {#if shouldBeDisplayed(info)}
           <ListgroupItem>
             <div class="flex items-center gap-1">
               {#if info?.success}
-                <i class={`bx bx-check-circle ${color}`}></i>
+                <CheckCircle fill={color} />
               {:else if info}
-                <i class={`bx bx-x-circle ${color}`}></i>
+                <XCircle fill={color} />
               {/if}
               <div class="font-bold text-black dark:text-white">{file.name}</div>
             </div>
@@ -123,18 +204,18 @@
               <div>{info.message}</div>
             {/if}
           </ListgroupItem>
-        {/each}
-      </Listgroup>
-    {:else if files}
-      <Listgroup class="mt-6">
-        {#each files as file, i (`upload-2-${uid}-${i}`)}
-          <ListgroupItem>
-            <div class="flex items-center gap-1">
-              <div class="font-bold text-black dark:text-white">{file.name}</div>
-            </div>
-          </ListgroupItem>
-        {/each}
-      </Listgroup>
-    {/if}
-  </div>
-</Card>
+        {/if}
+      {/each}
+    </Listgroup>
+  {:else if files}
+    <Listgroup class="mt-6">
+      {#each files as file, i (`upload-2-${uid}-${i}`)}
+        <ListgroupItem>
+          <div class="flex items-center gap-1">
+            <div class="font-bold text-black dark:text-white">{file.name}</div>
+          </div>
+        </ListgroupItem>
+      {/each}
+    </Listgroup>
+  {/if}
+</div>

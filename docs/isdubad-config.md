@@ -35,7 +35,7 @@ The configuration consists of the following sections:
 ### <a name="section_general"></a> Section `[general]` General parameters
 
 - `advisory_upload_limit`: Limits the size of a CSAF document to be uploaded.
-  Defaults to `"512K"`. Recognized unit suffixes are
+  [Defaults to `"15M"`](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#appendix-c-guidance-on-the-size-of-csaf-documents). Recognized unit suffixes are
   `k`/`K` for 1000/1024, `m`/`M` for 1000<sup>2</sup>/1024<sup>2</sup>,
   `g`/`G` 1000<sup>3</sup>/1024<sup>3</sup> and none for bytes.
 - `anonymous_event_logging`: Indicates that the event logging of the document
@@ -166,6 +166,7 @@ Valid values for `tlps` are the [Traffic Light Protocol](https://en.wikipedia.or
 - `keycloak_client_id`: The public client identifier. Defaults to `"auth"`.
 - `update_interval`: Specifies how often the token should be renewed. Defaults to `"5m"`.
 - `idle_timeout`: When the user should be logged out after inactivity. Defaults to `"30m"`.
+- `about_text` : Text that is displayed at the bottom of the login page. May contain HTML tags like `<a>`.
 
 ### <a name="section_aggregators"></a> Section `[aggregators]` Aggregators configuration
 

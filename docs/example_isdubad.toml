@@ -7,7 +7,7 @@
 #Software-Engineering: 2024 Intevation GmbH <https://intevation.de>
 
 # [general]
-# advisory_upload_limit = "512K"
+# advisory_upload_limit = "15M"
 # anonymous_event_logging = false
 # allowed_ports = [80, 443]
 # block_loopback = true
@@ -97,6 +97,9 @@
 # keycloak_client_id = "auth"
 # update_interval = "5m"
 # idle_timeout = "30m"
+# about_text = """Hosted by \
+#                 <a href="https://example.com"> \
+#                 Example Corp</a>"""
 
 # [forwarder]
 # update_interval = "5m"

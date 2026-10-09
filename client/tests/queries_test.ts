@@ -10,10 +10,14 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 
 const queryName = `Query ${Math.random()}`;
+const clonedQueryName = `${queryName} (1)`;
 
 test("Queries can be configured", async ({ page }) => {
   await page.goto("/#/queries");
-  await page.getByRole("link", { name: "New query", exact: false }).first().click();
+  let newQueryButton = page.getByRole("link", { name: "New query", exact: false }).first();
+  // When the list of queries is long it might be necessary to scroll
+  await newQueryButton.scrollIntoViewIfNeeded();
+  await newQueryButton.click();
   await page.getByLabel("Name:").fill(queryName);
   await page.getByLabel("Dashboard").check();
   await page.getByLabel("Hide").check();
@@ -28,7 +32,8 @@ test("Queries can be configured", async ({ page }) => {
 
   await page.getByLabel("Query criteria:").fill("");
   await page.getByRole("button", { name: "Save", exact: false }).click();
-  const newQueryButton = page.getByRole("link", { name: "New query", exact: false }).first();
+  newQueryButton = page.getByRole("link", { name: "New query", exact: false }).first();
+  await newQueryButton.scrollIntoViewIfNeeded();
   await expect(newQueryButton).toBeVisible();
 });
 
@@ -53,10 +58,20 @@ test("Query attributes 'dashboard', 'hide', and 'default' can be changed", async
   await expect(hideCheckbox).not.toBeChecked();
 });
 
+test("Personal queries can be cloned", async ({ page }) => {
+  await page.goto("/#/queries");
+  await page.getByTitle(`clone ${queryName}`, { exact: false }).click();
+  const table = page.getByRole("table").first();
+  await expect(table).toContainText(clonedQueryName);
+});
+
 test("Queries can be deleted", async ({ page }) => {
   await page.goto("/#/queries");
-  await page.getByTitle(`delete ${queryName}`, { exact: false }).click();
+  await page.getByTitle(`delete ${queryName}`, { exact: true }).click();
+  await page.getByRole("button", { name: "Yes", exact: false }).click();
+  await page.getByTitle(`delete ${clonedQueryName}`, { exact: true }).click();
   await page.getByRole("button", { name: "Yes", exact: false }).click();
   const table = page.getByRole("table").first();
   await expect(table).not.toContainText(queryName);
+  await expect(table).not.toContainText(clonedQueryName);
 });

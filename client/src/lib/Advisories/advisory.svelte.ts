@@ -166,15 +166,26 @@ interface SearchMatch {
 }
 
 const fetchSearchHits = async (id: number): Promise<SearchMatch[] | ErrorDetails> => {
-  const query = appStore.state.app.search.query;
+  const query = `"${appStore.state.app.search.term}" search _clientSearch as`;
   const response = await request(
-    `/api/documents/texts/${id}?query=${encodeURIComponent(query ?? "")}`,
+    `/api/documents/texts/${id}?query=${encodeURIComponent(query?.trim() ?? "")}`,
     "GET"
   );
   if (!response.ok) {
     return getErrorDetails("Could not load search matches.", response);
   }
   return response.content;
+};
+
+// Check if the loaded document (which is loaded via the internal ID) complies
+// with the parameters in the URL.
+const isResultConsistent = (params: any, document: any) => {
+  return (
+    params.trackingID &&
+    params.publisherNamespace &&
+    document.tracking.id === params.trackingID &&
+    document.publisher.name === params.publisherNamespace
+  );
 };
 
 type AdvisorySearchState = {
@@ -210,6 +221,7 @@ export {
   fetchDocumentSSVC,
   fetchSearchHits,
   getAdvisoryAnchorLink,
-  getAdvisorySearchHit
+  getAdvisorySearchHit,
+  isResultConsistent
 };
 export type { AdvisoryVersion, SearchMatch };

@@ -31,6 +31,7 @@
   import type { ErrorDetails } from "$lib/Errors/error";
   import validator from "validator";
   import type { InputProps } from "flowbite-svelte";
+  import { Check, Save } from "@boxicons/svelte";
 
   interface Props {
     params: any;
@@ -57,7 +58,7 @@
     return "default";
   });
 
-  let source: Source = {
+  let source: Source = $state({
     name: "",
     url: "",
     rate: undefined,
@@ -67,7 +68,7 @@
     ignore_patterns: [""],
     attention: false,
     client_cert_passphrase: ""
-  };
+  });
 
   let formClass = "max-w-[800pt]";
   const dtClass: string = "ml-1 mt-1 text-gray-500 md:text-sm dark:text-gray-400";
@@ -190,11 +191,11 @@
       {/if}
     </List>
 
-    <SourceForm bind:this={sourceForm} {inputChange} {formClass} {source}></SourceForm>
-    <FeedView feeds={pmdFeeds}></FeedView>
+    <SourceForm bind:this={sourceForm} {inputChange} {formClass} bind:source></SourceForm>
+    <FeedView bind:feeds={pmdFeeds}></FeedView>
 
     <Button onclick={saveAll} color="green">
-      <i class="bx bxs-save me-2"></i>
+      <Save class="me-2" />
       <span>Save source</span>
     </Button>
   {:else}
@@ -207,7 +208,7 @@
         <Spinner color="gray" size="4"></Spinner>
       </div>
       <Button type="submit" color="light" disabled={validUrl === false}>
-        <i class="bx bx-check me-2"></i>
+        <Check class="me-2" />
         <span>Search and load provider metadata</span>
       </Button>
     </form>
